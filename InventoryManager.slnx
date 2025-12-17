@@ -6,8 +6,7 @@
     <Project Path="src/InventoryManager.Infrastructure/InventoryManager.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/InventoryManager.Application.Tests/InventoryManager.Application.Tests.csproj" />
-    <Project Path="tests/InventoryManager.Domain.Tests/InventoryManager.Domain.Tests.csproj" />
-    <Project Path="tests/InventoryManager.Infrastructure.Tests/InventoryManager.Infrastructure.Tests.csproj" Id="629bc82a-a094-484b-90a9-195ea259f41a" />
+    <Project Path="tests/InventoryManager.IntegrationTests/InventoryManager.IntegrationTests.csproj" Id="5502b39b-c49c-47d5-bead-ca5576515f69" />
+    <Project Path="tests/InventoryManager.UnitTests/InventoryManager.UnitTests.csproj" Id="d1d04e36-248b-4563-a86a-b69dfc4ef201" />
   </Folder>
 </Solution>
