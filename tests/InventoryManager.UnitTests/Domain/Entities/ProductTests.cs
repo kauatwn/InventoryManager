@@ -148,4 +148,20 @@ public class ProductTests
         var exception = Assert.Throws<DomainException>(Act);
         Assert.Equal(Product.InsufficientStock, exception.Message);
     }
+
+    [Theory(DisplayName = "RemoveStock should throw exception when quantity is invalid")]
+    [InlineData(0)]
+    [InlineData(-5)]
+    public void RemoveStock_ShouldThrowDomainException_WhenQuantityIsInvalid(int invalidQuantity)
+    {
+        // Arrange
+        Product product = new(name: "Item", description: "Desc", price: 100m, stockQuantity: 10, sku: "SKU");
+
+        // Act
+        void Act() => product.RemoveStock(invalidQuantity);
+
+        // Assert
+        var exception = Assert.Throws<DomainException>(Act);
+        Assert.Equal(Product.QuantityMustBePositive, exception.Message);
+    }
 }
