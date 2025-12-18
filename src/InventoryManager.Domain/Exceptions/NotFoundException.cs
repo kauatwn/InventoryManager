@@ -2,5 +2,5 @@
 
 namespace InventoryManager.Domain.Exceptions;
 
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Simple exception wrapper without logic")]
 public sealed class NotFoundException(string message) : Exception(message);
