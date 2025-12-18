@@ -1,0 +1,53 @@
+﻿using FluentValidation;
+using FluentValidation.Results;
+using InventoryManager.Application.DTOs.Common;
+using InventoryManager.Application.DTOs.Requests;
+using InventoryManager.Application.DTOs.Responses;
+using InventoryManager.Domain.Entities;
+using InventoryManager.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
+using ValidationException = InventoryManager.Domain.Exceptions.ValidationException;
+
+namespace InventoryManager.Application.UseCases.Products.GetAll;
+
+public sealed partial class GetAllProductsUseCase(
+    IProductRepository repository,
+    IValidator<GetAllProductsRequest> validator,
+    ILogger<GetAllProductsUseCase> logger) : IGetAllProductsUseCase
+{
+    public PagedResult<ProductResponse> Execute(GetAllProductsRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        LogExecution(request.Page, request.PageSize);
+
+        ValidationResult result = validator.Validate(request);
+        if (!result.IsValid)
+        {
+            Dictionary<string, string[]> errors = result.Errors
+                .ToLookup(e => e.PropertyName, e => e.ErrorMessage)
+                .ToDictionary(lookup => lookup.Key, lookup => lookup.ToArray());
+
+            throw new ValidationException(errors);
+        }
+
+        (List<Product>? products, int totalCount) = repository.GetAll(request.Page, request.PageSize);
+
+        List<ProductResponse> items = [.. products
+            .Select(p =>
+                new ProductResponse(
+                    p.Id,
+                    p.Name,
+                    p.Description,
+                    p.Price,
+                    p.StockQuantity,
+                    p.Sku
+                )
+            )
+        ];
+
+        return new PagedResult<ProductResponse>(items, totalCount, request.Page, request.PageSize);
+    }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Getting all products. Page: {Page}, PageSize: {PageSize}")]
+    private partial void LogExecution(int page, int pageSize);
+}
