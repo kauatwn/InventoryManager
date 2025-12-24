@@ -32,7 +32,7 @@ public sealed class ProductRepository(InventoryDbContext context) : IProductRepo
     public async Task<(List<Product> Items, int TotalCount)> GetAllAsync(int page, int pageSize)
     {
         IQueryable<Product> query = context.Products.AsNoTracking();
-        int totalCount = query.Count();
+        int totalCount = await query.CountAsync();
 
         List<Product> items = await query
             .OrderBy(p => p.Name)
