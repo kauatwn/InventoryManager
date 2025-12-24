@@ -28,7 +28,7 @@ public class GetAllProductsUseCaseTests
     }
 
     [Fact(DisplayName = "Execute should return paged products when request is valid")]
-    public void Execute_ShouldReturnPagedProducts_WhenRequestIsValid()
+    public async Task Execute_ShouldReturnPagedProducts_WhenRequestIsValid()
     {
         // Arrange
         GetAllProductsRequest request = new(Page: 1, PageSize: 10);
@@ -51,11 +51,11 @@ public class GetAllProductsUseCaseTests
         _mockValidator.Setup(v => v.Validate(request))
             .Returns(new ValidationResult());
 
-        _mockRepository.Setup(r => r.GetAll(request.Page, request.PageSize))
-            .Returns((products, totalDatabaseCount));
+        _mockRepository.Setup(r => r.GetAllAsync(request.Page, request.PageSize))
+            .ReturnsAsync((products, totalDatabaseCount));
 
         // Act
-        PagedResult<ProductResponse> result = _sut.Execute(request);
+        PagedResult<ProductResponse> result = await _sut.ExecuteAsync(request);
 
         // Assert
         Assert.NotNull(result);
@@ -66,25 +66,25 @@ public class GetAllProductsUseCaseTests
         Assert.Equal(expected, result.Items[0]);
 
         _mockValidator.Verify(v => v.Validate(request), Times.Once);
-        _mockRepository.Verify(r => r.GetAll(request.Page, request.PageSize), Times.Once);
+        _mockRepository.Verify(r => r.GetAllAsync(request.Page, request.PageSize), Times.Once);
     }
 
     [Fact(DisplayName = "Execute should throw ArgumentNullException when request is null")]
-    public void Execute_ShouldThrowArgumentNullException_WhenRequestIsNull()
+    public async Task Execute_ShouldThrowArgumentNullException_WhenRequestIsNull()
     {
         // Act
-        void Act() => _sut.Execute(null!);
+        async Task ActAsync() => await _sut.ExecuteAsync(null!);
 
         // Assert
-        var exception = Assert.Throws<ArgumentNullException>(Act);
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(ActAsync);
         Assert.Equal("request", exception.ParamName);
 
         _mockValidator.Verify(v => v.Validate(It.IsAny<GetAllProductsRequest>()), Times.Never);
-        _mockRepository.Verify(r => r.GetAll(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        _mockRepository.Verify(r => r.GetAllAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
 
     [Fact(DisplayName = "Execute should return empty result when no products found")]
-    public void Execute_ShouldReturnEmptyResult_WhenNoProductsFound()
+    public async Task Execute_ShouldReturnEmptyResult_WhenNoProductsFound()
     {
         // Arrange
         GetAllProductsRequest request = new(Page: 1, PageSize: 10);
@@ -92,11 +92,11 @@ public class GetAllProductsUseCaseTests
         _mockValidator.Setup(v => v.Validate(request))
             .Returns(new ValidationResult());
 
-        _mockRepository.Setup(r => r.GetAll(request.Page, request.PageSize))
-            .Returns(([], 0));
+        _mockRepository.Setup(r => r.GetAllAsync(request.Page, request.PageSize))
+            .ReturnsAsync(([], 0));
 
         // Act
-        PagedResult<ProductResponse> result = _sut.Execute(request);
+        PagedResult<ProductResponse> result = await _sut.ExecuteAsync(request);
 
         // Assert
         Assert.NotNull(result);
@@ -104,11 +104,11 @@ public class GetAllProductsUseCaseTests
         Assert.Equal(0, result.TotalItems);
 
         _mockValidator.Verify(v => v.Validate(request), Times.Once);
-        _mockRepository.Verify(r => r.GetAll(It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+        _mockRepository.Verify(r => r.GetAllAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Once);
     }
 
     [Fact(DisplayName = "Execute should throw ValidationException when request is invalid")]
-    public void Execute_ShouldThrowValidationException_WhenRequestIsInvalid()
+    public async Task Execute_ShouldThrowValidationException_WhenRequestIsInvalid()
     {
         // Arrange
         GetAllProductsRequest request = new(Page: 0, PageSize: 10);
@@ -121,14 +121,14 @@ public class GetAllProductsUseCaseTests
             .Returns(new ValidationResult([failure]));
 
         // Act
-        void Act() => _sut.Execute(request);
+        async Task Act() => await _sut.ExecuteAsync(request);
 
         // Assert
-        var exception = Assert.Throws<ValidationException>(Act);
+        var exception = await Assert.ThrowsAsync<ValidationException>(Act);
         Assert.Contains(expectedKey, exception.Errors.Keys);
         Assert.Contains(exception.Errors[expectedKey], error => error == expectedMessage);
 
         _mockValidator.Verify(v => v.Validate(request), Times.Once);
-        _mockRepository.Verify(r => r.GetAll(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        _mockRepository.Verify(r => r.GetAllAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
 }

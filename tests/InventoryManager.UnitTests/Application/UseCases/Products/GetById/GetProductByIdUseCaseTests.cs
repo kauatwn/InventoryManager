@@ -23,7 +23,7 @@ public class GetProductByIdUseCaseTests
     }
 
     [Fact(DisplayName = "Execute should return product response when product exists")]
-    public void Execute_ShouldReturnProductResponse_WhenProductExists()
+    public async Task Execute_ShouldReturnProductResponse_WhenProductExists()
     {
         // Arrange
         Guid productId = Guid.NewGuid();
@@ -36,11 +36,11 @@ public class GetProductByIdUseCaseTests
             sku: "MON-144"
         );
 
-        _mockRepository.Setup(r => r.GetById(productId))
-            .Returns(product);
+        _mockRepository.Setup(r => r.GetByIdAsync(productId))
+            .ReturnsAsync(product);
 
         // Act
-        ProductResponse response = _sut.Execute(productId);
+        ProductResponse response = await _sut.ExecuteAsync(productId);
 
         // Assert
         Assert.NotNull(response);
@@ -52,27 +52,27 @@ public class GetProductByIdUseCaseTests
         Assert.Equal(product.StockQuantity, response.StockQuantity);
         Assert.Equal(product.Sku, response.Sku);
 
-        _mockRepository.Verify(r => r.GetById(productId), Times.Once);
+        _mockRepository.Verify(r => r.GetByIdAsync(productId), Times.Once);
     }
 
     [Fact(DisplayName = "Execute should throw NotFoundException when product does not exist")]
-    public void Execute_ShouldThrowNotFoundException_WhenProductDoesNotExist()
+    public async Task Execute_ShouldThrowNotFoundException_WhenProductDoesNotExist()
     {
         // Arrange
         Guid productId = Guid.NewGuid();
 
-        _mockRepository.Setup(r => r.GetById(productId))
-            .Returns((Product?)null);
+        _mockRepository.Setup(r => r.GetByIdAsync(productId))
+            .ReturnsAsync((Product?)null);
 
         string expectedMessage = string.Format(GetProductByIdUseCase.ProductNotFoundMessage, productId);
 
         // Act
-        void Act() => _sut.Execute(productId);
+        async Task Act() => await _sut.ExecuteAsync(productId);
 
         // Assert
-        var exception = Assert.Throws<NotFoundException>(Act);
+        var exception = await Assert.ThrowsAsync<NotFoundException>(Act);
         Assert.Equal(expectedMessage, exception.Message);
 
-        _mockRepository.Verify(r => r.GetById(productId), Times.Once);
+        _mockRepository.Verify(r => r.GetByIdAsync(productId), Times.Once);
     }
 }

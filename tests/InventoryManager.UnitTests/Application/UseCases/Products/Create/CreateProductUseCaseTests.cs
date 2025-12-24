@@ -28,7 +28,7 @@ public class CreateProductUseCaseTests
     }
 
     [Fact(DisplayName = "Execute should create product successfully when request is valid")]
-    public void Execute_ShouldCreateProductSuccessfully_WhenRequestIsValid()
+    public async Task Execute_ShouldCreateProductSuccessfully_WhenRequestIsValid()
     {
         // Arrange
         CreateProductRequest request = new(
@@ -42,11 +42,11 @@ public class CreateProductUseCaseTests
         _mockValidator.Setup(v => v.Validate(request))
             .Returns(new ValidationResult());
 
-        _mockRepository.Setup(r => r.Exists(request.Sku))
-            .Returns(false);
+        _mockRepository.Setup(r => r.ExistsAsync(request.Sku))
+            .ReturnsAsync(false);
 
         // Act
-        ProductResponse response = _sut.Execute(request);
+        ProductResponse response = await _sut.ExecuteAsync(request);
 
         // Assert
         Assert.NotNull(response);
@@ -59,8 +59,8 @@ public class CreateProductUseCaseTests
 
 
         _mockValidator.Verify(v => v.Validate(request), Times.Once);
-        _mockRepository.Verify(r => r.Exists(request.Sku), Times.Once);
-        _mockRepository.Verify(r => r.Add(It.Is<Product>(p =>
+        _mockRepository.Verify(r => r.ExistsAsync(request.Sku), Times.Once);
+        _mockRepository.Verify(r => r.AddAsync(It.Is<Product>(p =>
             p.Name == request.Name &&
             p.Sku == request.Sku &&
             p.Price == request.Price
@@ -68,21 +68,21 @@ public class CreateProductUseCaseTests
     }
 
     [Fact(DisplayName = "Execute should throw ArgumentNullException when request is null")]
-    public void Execute_ShouldThrowArgumentNullException_WhenRequestIsNull()
+    public async Task Execute_ShouldThrowArgumentNullException_WhenRequestIsNull()
     {
         // Act
-        void Act() => _sut.Execute(null!);
+        async Task ActAsync() => await _sut.ExecuteAsync(null!);
 
         // Assert
-        var exception = Assert.Throws<ArgumentNullException>(Act);
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(ActAsync);
         Assert.Equal("request", exception.ParamName);
 
         _mockValidator.Verify(v => v.Validate(It.IsAny<CreateProductRequest>()), Times.Never);
-        _mockRepository.Verify(r => r.Add(It.IsAny<Product>()), Times.Never);
+        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Never);
     }
 
     [Fact(DisplayName = "Execute should throw ValidationException when validator fails")]
-    public void Execute_ShouldThrowValidationException_WhenValidatorFails()
+    public async Task Execute_ShouldThrowValidationException_WhenValidatorFails()
     {
         // Arrange
         CreateProductRequest request = new(
@@ -102,20 +102,20 @@ public class CreateProductUseCaseTests
             .Returns(new ValidationResult([failure]));
 
         // Act
-        void Act() => _sut.Execute(request);
+        async Task ActAsync() => await _sut.ExecuteAsync(request);
 
         // Assert
-        var exception = Assert.Throws<ValidationException>(Act);
+        var exception = await Assert.ThrowsAsync<ValidationException>(ActAsync);
 
         Assert.Contains(expectedKey, exception.Errors.Keys);
         Assert.Contains(exception.Errors[expectedKey], error => error == expectedMessage);
 
         _mockValidator.Verify(v => v.Validate(request), Times.Once);
-        _mockRepository.Verify(r => r.Add(It.IsAny<Product>()), Times.Never);
+        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Never);
     }
 
     [Fact(DisplayName = "Execute should throw ConflictException when SKU already exists")]
-    public void Execute_ShouldThrowConflictException_WhenSkuAlreadyExists()
+    public async Task Execute_ShouldThrowConflictException_WhenSkuAlreadyExists()
     {
         // Arrange
         CreateProductRequest request = new(
@@ -129,20 +129,20 @@ public class CreateProductUseCaseTests
         _mockValidator.Setup(v => v.Validate(request))
             .Returns(new ValidationResult());
 
-        _mockRepository.Setup(r => r.Exists(request.Sku))
-            .Returns(true);
+        _mockRepository.Setup(r => r.ExistsAsync(request.Sku))
+            .ReturnsAsync(true);
 
         string expectedMessage = string.Format(CreateProductUseCase.SkuAlreadyExistsMessage, request.Sku);
 
         // Act
-        void Act() => _sut.Execute(request);
+        async Task ActAsync() => await _sut.ExecuteAsync(request);
 
         // Assert
-        var exception = Assert.Throws<ConflictException>(Act);
+        var exception = await Assert.ThrowsAsync<ConflictException>(ActAsync);
         Assert.Equal(expectedMessage, exception.Message);
 
         _mockValidator.Verify(v => v.Validate(request), Times.Once);
-        _mockRepository.Verify(r => r.Exists(request.Sku), Times.Once);
-        _mockRepository.Verify(r => r.Add(It.IsAny<Product>()), Times.Never);
+        _mockRepository.Verify(r => r.ExistsAsync(request.Sku), Times.Once);
+        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Never);
     }
 }
