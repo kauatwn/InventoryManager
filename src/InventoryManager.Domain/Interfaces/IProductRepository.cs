@@ -4,11 +4,11 @@ namespace InventoryManager.Domain.Interfaces;
 
 public interface IProductRepository
 {
-    void Add(Product product);
-    Product? GetById(Guid id);
-    (List<Product> Items, int TotalCount) GetAll(int page, int pageSize);
-    void Update(Product product);
-    void Delete(Product product);
-    bool Exists(string sku);
-    bool IsSkuUnique(string sku, Guid ignoreProductId);
+    Task AddAsync(Product product);
+    Task UpdateAsync(Product product);
+    Task DeleteAsync(Product product);
+    Task<Product?> GetByIdAsync(Guid id);
+    Task<(List<Product> Items, int TotalCount)> GetAllAsync(int page, int pageSize);
+    Task<bool> ExistsAsync(string sku);
+    Task<bool> IsSkuUniqueAsync(string sku, Guid ignoreProductId);
 }
