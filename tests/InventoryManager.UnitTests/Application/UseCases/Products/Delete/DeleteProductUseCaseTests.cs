@@ -22,7 +22,7 @@ public class DeleteProductUseCaseTests
     }
 
     [Fact(DisplayName = "Execute should delete product when product exists")]
-    public void Execute_ShouldDeleteProduct_WhenProductExists()
+    public async Task Execute_ShouldDeleteProduct_WhenProductExists()
     {
         // Arrange
         Guid productId = Guid.NewGuid();
@@ -35,35 +35,35 @@ public class DeleteProductUseCaseTests
             sku: "DEL-001"
         );
 
-        _mockRepository.Setup(r => r.GetById(productId))
-            .Returns(product);
+        _mockRepository.Setup(r => r.GetByIdAsync(productId))
+            .ReturnsAsync(product);
 
         // Act
-        _sut.Execute(productId);
+        await _sut.ExecuteAsync(productId);
 
         // Assert
-        _mockRepository.Verify(r => r.GetById(productId), Times.Once);
-        _mockRepository.Verify(r => r.Delete(product), Times.Once);
+        _mockRepository.Verify(r => r.GetByIdAsync(productId), Times.Once);
+        _mockRepository.Verify(r => r.DeleteAsync(product), Times.Once);
     }
 
     [Fact(DisplayName = "Execute should throw NotFoundException when product does not exist")]
-    public void Execute_ShouldThrowNotFoundException_WhenProductDoesNotExist()
+    public async Task Execute_ShouldThrowNotFoundException_WhenProductDoesNotExist()
     {
         // Arrange
         Guid productId = Guid.NewGuid();
 
-        _mockRepository.Setup(r => r.GetById(productId))
-            .Returns((Product?)null);
+        _mockRepository.Setup(r => r.GetByIdAsync(productId))
+            .ReturnsAsync((Product?)null);
 
         string expectedMessage = string.Format(DeleteProductUseCase.ProductNotFoundMessage, productId);
 
         // Act
-        void Act() => _sut.Execute(productId);
+        async Task ActAsync() => await _sut.ExecuteAsync(productId);
 
         // Assert
-        var exception = Assert.Throws<NotFoundException>(Act);
+        var exception = await Assert.ThrowsAsync<NotFoundException>(ActAsync);
         Assert.Equal(expectedMessage, exception.Message);
 
-        _mockRepository.Verify(r => r.Delete(It.IsAny<Product>()), Times.Never);
+        _mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Product>()), Times.Never);
     }
 }

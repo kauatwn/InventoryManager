@@ -17,7 +17,7 @@ public sealed partial class CreateProductUseCase(
 {
     public const string SkuAlreadyExistsMessage = "Product with SKU {0} already exists.";
 
-    public ProductResponse Execute(CreateProductRequest request)
+    public async Task<ProductResponse> ExecuteAsync(CreateProductRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         LogExecution(request.Name);
@@ -32,13 +32,13 @@ public sealed partial class CreateProductUseCase(
             throw new ValidationException(errors);
         }
 
-        if (repository.Exists(request.Sku))
+        if (await repository.ExistsAsync(request.Sku))
         {
             throw new ConflictException(string.Format(SkuAlreadyExistsMessage, request.Sku));
         }
 
         Product product = new(request.Name, request.Description, request.Price, request.StockQuantity, request.Sku);
-        repository.Add(product);
+        await repository.AddAsync(product);
 
         return new ProductResponse(
             product.Id,

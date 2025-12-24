@@ -17,7 +17,7 @@ public sealed partial class UpdateProductUseCase(
     public const string ProductNotFoundMessage = "Product with Id '{0}' not found.";
     public const string SkuAlreadyExistsMessage = "Product with SKU {0} already exists.";
 
-    public void Execute(Guid id, UpdateProductRequest request)
+    public async Task ExecuteAsync(Guid id, UpdateProductRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         LogUpdatingProduct(id);
@@ -32,16 +32,16 @@ public sealed partial class UpdateProductUseCase(
             throw new ValidationException(errors);
         }
 
-        Product product = repository.GetById(id)
+        Product product = await repository.GetByIdAsync(id)
             ?? throw new NotFoundException(string.Format(ProductNotFoundMessage, id));
 
-        if (!repository.IsSkuUnique(request.Sku, id))
+        if (!await repository.IsSkuUniqueAsync(request.Sku, id))
         {
             throw new ConflictException(string.Format(SkuAlreadyExistsMessage, request.Sku));
         }
 
         product.Update(request.Name, request.Description, request.Price, request.StockQuantity, request.Sku);
-        repository.Update(product);
+        await repository.UpdateAsync(product);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Updating product {Id}")]

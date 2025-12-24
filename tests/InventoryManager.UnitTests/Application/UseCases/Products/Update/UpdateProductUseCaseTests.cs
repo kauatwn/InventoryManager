@@ -27,7 +27,7 @@ public class UpdateProductUseCaseTests
     }
 
     [Fact(DisplayName = "Execute should update product successfully when request is valid")]
-    public void Execute_ShouldUpdateProductSuccessfully_WhenRequestIsValid()
+    public async Task Execute_ShouldUpdateProductSuccessfully_WhenRequestIsValid()
     {
         // Arrange
         Guid productId = Guid.NewGuid();
@@ -44,46 +44,46 @@ public class UpdateProductUseCaseTests
         _mockValidator.Setup(v => v.Validate(request))
             .Returns(new ValidationResult());
 
-        _mockRepository.Setup(r => r.GetById(productId))
-            .Returns(existingProduct);
+        _mockRepository.Setup(r => r.GetByIdAsync(productId))
+            .ReturnsAsync(existingProduct);
 
-        _mockRepository.Setup(r => r.IsSkuUnique(request.Sku, productId))
-            .Returns(true);
+        _mockRepository.Setup(r => r.IsSkuUniqueAsync(request.Sku, productId))
+            .ReturnsAsync(true);
 
         // Act
-        _sut.Execute(productId, request);
+        await _sut.ExecuteAsync(productId, request);
 
         // Assert
         Assert.Equal(request.Name, existingProduct.Name);
         Assert.Equal(request.Sku, existingProduct.Sku);
 
         _mockValidator.Verify(v => v.Validate(request), Times.Once);
-        _mockRepository.Verify(r => r.GetById(productId), Times.Once);
-        _mockRepository.Verify(r => r.IsSkuUnique(request.Sku, productId), Times.Once);
-        _mockRepository.Verify(r => r.Update(existingProduct), Times.Once);
+        _mockRepository.Verify(r => r.GetByIdAsync(productId), Times.Once);
+        _mockRepository.Verify(r => r.IsSkuUniqueAsync(request.Sku, productId), Times.Once);
+        _mockRepository.Verify(r => r.UpdateAsync(existingProduct), Times.Once);
     }
 
     [Fact(DisplayName = "Execute should throw ArgumentNullException when request is null")]
-    public void Execute_ShouldThrowArgumentNullException_WhenRequestIsNull()
+    public async Task Execute_ShouldThrowArgumentNullException_WhenRequestIsNull()
     {
         // Arrange
         Guid productId = Guid.NewGuid();
 
         // Act
-        void Act() => _sut.Execute(productId, null!);
+        async Task ActAsync() => await _sut.ExecuteAsync(productId, null!);
 
         // Assert
-        var exception = Assert.Throws<ArgumentNullException>(Act);
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(ActAsync);
         Assert.Equal("request", exception.ParamName);
 
         // Garante que nada foi chamado
         _mockValidator.Verify(v => v.Validate(It.IsAny<UpdateProductRequest>()), Times.Never);
-        _mockRepository.Verify(r => r.GetById(It.IsAny<Guid>()), Times.Never);
-        _mockRepository.Verify(r => r.Update(It.IsAny<Product>()), Times.Never);
+        _mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
+        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Never);
     }
 
     [Fact(DisplayName = "Execute should throw ValidationException when validator fails")]
-    public void Execute_ShouldThrowValidationException_WhenValidatorFails()
+    public async Task Execute_ShouldThrowValidationException_WhenValidatorFails()
     {
         // Arrange
         Guid productId = Guid.NewGuid();
@@ -98,21 +98,21 @@ public class UpdateProductUseCaseTests
             .Returns(new ValidationResult([failure]));
 
         // Act
-        void Act() => _sut.Execute(productId, request);
+        async Task ActAsync() => await _sut.ExecuteAsync(productId, request);
 
         // Assert
-        var exception = Assert.Throws<ValidationException>(Act);
+        var exception = await Assert.ThrowsAsync<ValidationException>(ActAsync);
         Assert.Contains(expectedKey, exception.Errors.Keys);
         Assert.Contains(exception.Errors[expectedKey], error => error == expectedMessage);
 
         // Verify
         _mockValidator.Verify(v => v.Validate(request), Times.Once);
-        _mockRepository.Verify(r => r.GetById(It.IsAny<Guid>()), Times.Never);
-        _mockRepository.Verify(r => r.Update(It.IsAny<Product>()), Times.Never);
+        _mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
+        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Never);
     }
 
     [Fact(DisplayName = "Execute should throw NotFoundException when product does not exist")]
-    public void Execute_ShouldThrowNotFoundException_WhenProductDoesNotExist()
+    public async Task Execute_ShouldThrowNotFoundException_WhenProductDoesNotExist()
     {
         // Arrange
         Guid productId = Guid.NewGuid();
@@ -121,26 +121,26 @@ public class UpdateProductUseCaseTests
         _mockValidator.Setup(v => v.Validate(request))
             .Returns(new ValidationResult());
 
-        _mockRepository.Setup(r => r.GetById(productId))
-            .Returns((Product?)null);
+        _mockRepository.Setup(r => r.GetByIdAsync(productId))
+            .ReturnsAsync((Product?)null);
 
         string expectedMessage = string.Format(UpdateProductUseCase.ProductNotFoundMessage, productId);
 
         // Act
-        void Act() => _sut.Execute(productId, request);
+        async Task ActAsync() => await _sut.ExecuteAsync(productId, request);
 
         // Assert
-        var exception = Assert.Throws<NotFoundException>(Act);
+        var exception = await Assert.ThrowsAsync<NotFoundException>(ActAsync);
         Assert.Equal(expectedMessage, exception.Message);
 
         // Verify
         _mockValidator.Verify(v => v.Validate(request), Times.Once);
-        _mockRepository.Verify(r => r.GetById(productId), Times.Once);
-        _mockRepository.Verify(r => r.Update(It.IsAny<Product>()), Times.Never);
+        _mockRepository.Verify(r => r.GetByIdAsync(productId), Times.Once);
+        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Never);
     }
 
     [Fact(DisplayName = "Execute should throw ConflictException when SKU is already in use by another product")]
-    public void Execute_ShouldThrowConflictException_WhenSkuAlreadyInUse()
+    public async Task Execute_ShouldThrowConflictException_WhenSkuAlreadyInUse()
     {
         // Arrange
         Guid productId = Guid.NewGuid();
@@ -150,27 +150,27 @@ public class UpdateProductUseCaseTests
         _mockValidator.Setup(v => v.Validate(request))
             .Returns(new ValidationResult());
 
-        _mockRepository.Setup(r => r.GetById(productId))
-            .Returns(existingProduct);
+        _mockRepository.Setup(r => r.GetByIdAsync(productId))
+            .ReturnsAsync(existingProduct);
 
-        _mockRepository.Setup(r => r.IsSkuUnique(request.Sku, productId))
-            .Returns(false);
+        _mockRepository.Setup(r => r.IsSkuUniqueAsync(request.Sku, productId))
+            .ReturnsAsync(false);
 
         string expectedMessage = string.Format(UpdateProductUseCase.SkuAlreadyExistsMessage, request.Sku);
 
         // Act
-        void Act() => _sut.Execute(productId, request);
+        async Task ActAsync() => await _sut.ExecuteAsync(productId, request);
 
         // Assert
-        var exception = Assert.Throws<ConflictException>(Act);
+        var exception = await Assert.ThrowsAsync<ConflictException>(ActAsync);
 
         // Verificamos a mensagem
         Assert.Equal(expectedMessage, exception.Message);
 
         // Verify
         _mockValidator.Verify(v => v.Validate(request), Times.Once);
-        _mockRepository.Verify(r => r.GetById(productId), Times.Once);
-        _mockRepository.Verify(r => r.IsSkuUnique(request.Sku, productId), Times.Once);
-        _mockRepository.Verify(r => r.Update(It.IsAny<Product>()), Times.Never);
+        _mockRepository.Verify(r => r.GetByIdAsync(productId), Times.Once);
+        _mockRepository.Verify(r => r.IsSkuUniqueAsync(request.Sku, productId), Times.Once);
+        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Never);
     }
 }

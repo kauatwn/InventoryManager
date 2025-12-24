@@ -2,5 +2,5 @@
 
 public interface IDeleteProductUseCase
 {
-    void Execute(Guid id);
+    Task ExecuteAsync(Guid id);
 }

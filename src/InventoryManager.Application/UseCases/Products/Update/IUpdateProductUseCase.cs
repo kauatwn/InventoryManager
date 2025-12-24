@@ -4,5 +4,5 @@ namespace InventoryManager.Application.UseCases.Products.Update;
 
 public interface IUpdateProductUseCase
 {
-    void Execute(Guid id, UpdateProductRequest request);
+    Task ExecuteAsync(Guid id, UpdateProductRequest request);
 }

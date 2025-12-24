@@ -11,13 +11,14 @@ public sealed partial class DeleteProductUseCase(
 {
     public const string ProductNotFoundMessage = "Product with Id '{0}' not found.";
 
-    public void Execute(Guid id)
+    public async Task ExecuteAsync(Guid id)
     {
         LogDeletingProduct(id);
 
-        Product product = repository.GetById(id) ?? throw new NotFoundException(string.Format(ProductNotFoundMessage, id));
+        Product product = await repository.GetByIdAsync(id) 
+            ?? throw new NotFoundException(string.Format(ProductNotFoundMessage, id));
 
-        repository.Delete(product);
+        await repository.DeleteAsync(product);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Deleting product {Id}")]

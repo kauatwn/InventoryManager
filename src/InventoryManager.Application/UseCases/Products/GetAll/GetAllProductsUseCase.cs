@@ -15,7 +15,7 @@ public sealed partial class GetAllProductsUseCase(
     IValidator<GetAllProductsRequest> validator,
     ILogger<GetAllProductsUseCase> logger) : IGetAllProductsUseCase
 {
-    public PagedResult<ProductResponse> Execute(GetAllProductsRequest request)
+    public async Task<PagedResult<ProductResponse>> ExecuteAsync(GetAllProductsRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         LogExecution(request.Page, request.PageSize);
@@ -30,7 +30,7 @@ public sealed partial class GetAllProductsUseCase(
             throw new ValidationException(errors);
         }
 
-        (List<Product>? products, int totalCount) = repository.GetAll(request.Page, request.PageSize);
+        (List<Product>? products, int totalCount) = await repository.GetAllAsync(request.Page, request.PageSize);
 
         List<ProductResponse> items = [.. products
             .Select(p =>
