@@ -4,5 +4,5 @@ namespace InventoryManager.Application.UseCases.Products.GetById;
 
 public interface IGetProductByIdUseCase
 {
-    ProductResponse Execute(Guid id);
+    Task<ProductResponse> ExecuteAsync(Guid id);
 }

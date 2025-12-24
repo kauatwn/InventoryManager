@@ -5,5 +5,5 @@ namespace InventoryManager.Application.UseCases.Products.Create;
 
 public interface ICreateProductUseCase
 {
-    ProductResponse Execute(CreateProductRequest request);
+    Task<ProductResponse> ExecuteAsync(CreateProductRequest request);
 }

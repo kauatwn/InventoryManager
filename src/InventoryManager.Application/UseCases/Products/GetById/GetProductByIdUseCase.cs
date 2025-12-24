@@ -12,11 +12,12 @@ public sealed partial class GetProductByIdUseCase(
 {
     public const string ProductNotFoundMessage = "Product with Id '{0}' not found.";
 
-    public ProductResponse Execute(Guid id)
+    public async Task<ProductResponse> ExecuteAsync(Guid id)
     {
         LogExecution(id);
 
-        Product product = repository.GetById(id) ?? throw new NotFoundException(string.Format(ProductNotFoundMessage, id));
+        Product product = await repository.GetByIdAsync(id)
+            ?? throw new NotFoundException(string.Format(ProductNotFoundMessage, id));
 
         return new ProductResponse(
             product.Id,

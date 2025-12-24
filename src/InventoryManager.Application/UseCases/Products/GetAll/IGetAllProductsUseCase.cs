@@ -6,5 +6,5 @@ namespace InventoryManager.Application.UseCases.Products.GetAll;
 
 public interface IGetAllProductsUseCase
 {
-    PagedResult<ProductResponse> Execute(GetAllProductsRequest request);
+    Task<PagedResult<ProductResponse>> ExecuteAsync(GetAllProductsRequest request);
 }
