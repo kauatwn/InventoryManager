@@ -29,7 +29,7 @@ public sealed class ProductRepository(InventoryDbContext context) : IProductRepo
         return await context.Products.FindAsync(id);
     }
 
-    public async Task<(List<Product> Items, int TotalCount)> GetAllAsync(int page, int pageSize)
+    public async Task<(IReadOnlyCollection<Product> Items, int TotalCount)> GetAllAsync(int page, int pageSize)
     {
         IQueryable<Product> query = context.Products.AsNoTracking();
         int totalCount = await query.CountAsync();
