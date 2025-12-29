@@ -103,7 +103,16 @@ The core logic resides entirely within the `Domain` layer.
 - **Encapsulation:** Properties use `private set` to ensure changes only happen through valid business methods or constructors.
 - **Value Objects:** Concepts like SKU are treated with specific formatting and validation rules.
 
-### 2. Design Patterns
+### 2. Response Patterns
+
+The API uses **direct DTO responses** instead of wrapper patterns, with specialized handling for different scenarios:
+
+- **Single Resources**: Direct `ProductResponse` objects for individual items
+- **Collections**: `List<ProductResponse>` with pagination metadata in HTTP headers (`X-Pagination`)
+- **Pagination**: `PagedResult<T>` internally with `PagedMeta` for navigation information
+- **Empty Results**: HTTP 204 (No Content) for successful operations without response body
+
+### 3. Design Patterns
 
 The project utilizes established patterns to ensure modularity and scalability.
 
@@ -111,9 +120,22 @@ The project utilizes established patterns to ensure modularity and scalability.
 |:------------------------:|:--------------------------------------:|:--------------------------------|
 | **Repository**           | Abstracting data access logic          | `IProductRepository`            |
 | **Dependency Injection** | Decoupling layers and enabling testing | `IServiceCollection` extensions |
-| **Result / Wrapper**     | Standardizing API responses            | `PagedResponse<T>`              |
+| **Exception Handling**   | Centralized error management           | `IExceptionHandler` pipeline    |
+| **Pagination**           | Standardizing paginated responses      | `PagedResult<T>` & `PagedMeta`  |
 
-### 3. Comprehensive Testing Strategy
+### 4. Error Handling Strategy
+
+The API implements a **centralized exception handling approach** using ASP.NET Core's `IExceptionHandler` pipeline, eliminating the need for traditional Result patterns.
+
+- **Domain Exceptions**: Business rule violations are handled by `DomainExceptionHandler` (422 Unprocessable Entity)
+- **Validation Exceptions**: Input validation errors are handled by `ValidationExceptionHandler` (400 Bad Request)
+- **Not Found Exceptions**: Resource not found scenarios are handled by `NotFoundExceptionHandler` (404 Not Found)
+- **Conflict Exceptions**: Resource conflicts (e.g., duplicate SKU) are handled by `ConflictExceptionHandler` (409 Conflict)
+- **Unhandled Exceptions**: Unexpected errors are handled by `UnhandledExceptionHandler` (500 Internal Server Error)
+
+This approach ensures **clean separation** between business logic and HTTP concerns, with Use Cases focusing purely on domain operations while controllers remain thin and focused on HTTP-specific responsibilities.
+
+### 5. Comprehensive Testing Strategy
 
 The project adopts a "Testing Pyramid" approach using **xUnit** and **Moq**.
 
@@ -130,7 +152,7 @@ The project adopts a "Testing Pyramid" approach using **xUnit** and **Moq**.
 > - In production scenarios with real databases (SQL Server/Postgres), it is common to use **Total Isolation** strategies, such as **Transaction Rollbacks** or **Database Resets** (using libraries like [TestContainers](https://testcontainers.com/)), which would allow the use of static data.
 > - We maintained the defensive approach here to focus didactically on the **API Contract** without the overhead of Docker/Containers configuration.
 
-### 4. CI/CD & Quality
+### 6. CI/CD & Quality
 
 The project includes a **GitHub Actions** workflow that ensures quality on every push:
 
