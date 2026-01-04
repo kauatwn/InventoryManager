@@ -9,7 +9,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, _, _) =>
+    {
+        document.Info = new()
+        {
+            Title = "Inventory Manager API",
+            Version = "v1",
+            Description = "A robust Web API for product inventory management built with Clean Architecture and DDD principles."
+        };
+
+        return Task.CompletedTask;
+    });
+});
 
 builder.Services.AddApiExceptionHandlers();
 

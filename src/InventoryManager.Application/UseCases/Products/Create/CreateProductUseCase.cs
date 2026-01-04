@@ -22,12 +22,12 @@ public sealed partial class CreateProductUseCase(
         ArgumentNullException.ThrowIfNull(request);
         LogExecution(request.Name);
 
-        ValidationResult result = validator.Validate(request);
+        ValidationResult result = await validator.ValidateAsync(request);
         if (!result.IsValid)
         {
             Dictionary<string, string[]> errors = result.Errors
-                .ToLookup(e => e.PropertyName, e => e.ErrorMessage)
-                .ToDictionary(lookup => lookup.Key, lookup => lookup.ToArray());
+                .GroupBy(e => e.PropertyName, e => e.ErrorMessage)
+                .ToDictionary(g => g.Key, g => g.ToArray());
 
             throw new ValidationException(errors);
         }
@@ -46,8 +46,7 @@ public sealed partial class CreateProductUseCase(
             product.Description,
             product.Price,
             product.StockQuantity,
-            product.Sku
-        );
+            product.Sku);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Executing create product use case for: {Name}")]

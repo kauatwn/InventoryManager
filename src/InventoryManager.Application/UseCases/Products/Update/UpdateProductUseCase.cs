@@ -22,12 +22,12 @@ public sealed partial class UpdateProductUseCase(
         ArgumentNullException.ThrowIfNull(request);
         LogUpdatingProduct(id);
 
-        ValidationResult result = validator.Validate(request);
+        ValidationResult result = await validator.ValidateAsync(request);
         if (!result.IsValid)
         {
             Dictionary<string, string[]> errors = result.Errors
-                .ToLookup(e => e.PropertyName, e => e.ErrorMessage)
-                .ToDictionary(lookup => lookup.Key, lookup => lookup.ToArray());
+                .GroupBy(e => e.PropertyName, e => e.ErrorMessage)
+                .ToDictionary(g => g.Key, g => g.ToArray());
 
             throw new ValidationException(errors);
         }

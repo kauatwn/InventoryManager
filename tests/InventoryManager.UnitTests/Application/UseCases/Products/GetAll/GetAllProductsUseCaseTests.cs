@@ -32,7 +32,8 @@ public class GetAllProductsUseCaseTests
     {
         // Arrange
         GetAllProductsRequest request = new(Page: 1, PageSize: 10);
-        List<Product> products = [
+        List<Product> products =
+        [
             new Product(name: "Mouse", description: "Desc", price: 100m, stockQuantity: 5, sku: "SKU1"),
             new Product(name: "Keyboard", description: "Desc", price: 200m, stockQuantity: 10, sku: "SKU2")
         ];
@@ -48,8 +49,8 @@ public class GetAllProductsUseCaseTests
 
         const int totalDatabaseCount = 50;
 
-        _mockValidator.Setup(v => v.Validate(request))
-            .Returns(new ValidationResult());
+        _mockValidator.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
 
         _mockRepository.Setup(r => r.GetAllAsync(request.Page, request.PageSize))
             .ReturnsAsync((products, totalDatabaseCount));
@@ -65,7 +66,7 @@ public class GetAllProductsUseCaseTests
         Assert.Equal(2, result.Items.Count);
         Assert.Equal(expected, result.Items[0]);
 
-        _mockValidator.Verify(v => v.Validate(request), Times.Once);
+        _mockValidator.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
         _mockRepository.Verify(r => r.GetAllAsync(request.Page, request.PageSize), Times.Once);
     }
 
@@ -79,7 +80,9 @@ public class GetAllProductsUseCaseTests
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(ActAsync);
         Assert.Equal("request", exception.ParamName);
 
-        _mockValidator.Verify(v => v.Validate(It.IsAny<GetAllProductsRequest>()), Times.Never);
+        _mockValidator.Verify(v => v.ValidateAsync(It.IsAny<GetAllProductsRequest>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        
         _mockRepository.Verify(r => r.GetAllAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
 
@@ -89,8 +92,8 @@ public class GetAllProductsUseCaseTests
         // Arrange
         GetAllProductsRequest request = new(Page: 1, PageSize: 10);
 
-        _mockValidator.Setup(v => v.Validate(request))
-            .Returns(new ValidationResult());
+        _mockValidator.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
 
         _mockRepository.Setup(r => r.GetAllAsync(request.Page, request.PageSize))
             .ReturnsAsync(([], 0));
@@ -103,7 +106,7 @@ public class GetAllProductsUseCaseTests
         Assert.Empty(result.Items);
         Assert.Equal(0, result.TotalItems);
 
-        _mockValidator.Verify(v => v.Validate(request), Times.Once);
+        _mockValidator.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
         _mockRepository.Verify(r => r.GetAllAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Once);
     }
 
@@ -117,8 +120,8 @@ public class GetAllProductsUseCaseTests
         const string expectedMessage = GetAllProductsValidator.PageMustBePositive;
 
         ValidationFailure failure = new(expectedKey, expectedMessage);
-        _mockValidator.Setup(v => v.Validate(request))
-            .Returns(new ValidationResult([failure]));
+        _mockValidator.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult([failure]));
 
         // Act
         async Task Act() => await _sut.ExecuteAsync(request);
@@ -128,7 +131,7 @@ public class GetAllProductsUseCaseTests
         Assert.Contains(expectedKey, exception.Errors.Keys);
         Assert.Contains(exception.Errors[expectedKey], error => error == expectedMessage);
 
-        _mockValidator.Verify(v => v.Validate(request), Times.Once);
+        _mockValidator.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
         _mockRepository.Verify(r => r.GetAllAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
 }

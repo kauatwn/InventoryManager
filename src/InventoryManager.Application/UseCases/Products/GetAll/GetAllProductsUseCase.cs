@@ -20,11 +20,11 @@ public sealed partial class GetAllProductsUseCase(
         ArgumentNullException.ThrowIfNull(request);
         LogExecution(request.Page, request.PageSize);
 
-        ValidationResult result = validator.Validate(request);
+        ValidationResult result = await validator.ValidateAsync(request);
         if (!result.IsValid)
         {
             Dictionary<string, string[]> errors = result.Errors
-                .ToLookup(e => e.PropertyName, e => e.ErrorMessage)
+                .GroupBy(e => e.PropertyName, e => e.ErrorMessage)
                 .ToDictionary(lookup => lookup.Key, lookup => lookup.ToArray());
 
             throw new ValidationException(errors);
