@@ -3,6 +3,7 @@ name: CI (Build, Test, Analyze & Docker)
 on:
   push:
     branches: ["master"]
+
   pull_request:
     branches: ["master"]
     types: [opened, synchronize, reopened]
@@ -22,28 +23,28 @@ jobs:
 
     steps:
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: 17
-          distribution: "zulu" # Alternative distribution options are available.
-      - uses: actions/checkout@v4
+          distribution: "temurin" # Alternative distribution options are available.
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
           restore-keys: ${{ runner.os }}-nuget-
 
       - name: Cache SonarQube Cloud packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
@@ -51,7 +52,7 @@ jobs:
 
       - name: Cache SonarQube Cloud scanner
         id: cache-sonar-scanner
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ runner.temp }}/scanner
           key: ${{ runner.os }}-sonar-scanner
@@ -73,6 +74,7 @@ jobs:
           /o:"kauatwn" \
           /d:sonar.token="$SONAR_TOKEN" \
           /d:sonar.host.url="https://sonarcloud.io" \
+          /d:sonar.projectBaseDir="${{ github.workspace }}" \
           /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
           /d:sonar.coverage.exclusions="**/InventoryManager.Infrastructure/**"
 
@@ -88,5 +90,15 @@ jobs:
       - name: End SonarQube Cloud Analysis
         run: ${{ runner.temp }}/scanner/dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
       - name: Docker Build Check
-        run: docker build -t inventory-manager:latest -f src/InventoryManager.API/Dockerfile .
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+        with:
+          context: .
+          file: src/InventoryManager.API/Dockerfile
+          push: false
+          tags: inventory-manager:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
