@@ -36,11 +36,11 @@ public class CreateProductUseCaseTests
             Description: "Mechanical RGB",
             Price: 200.00m,
             StockQuantity: 50,
-            Sku: "KB-RGB-001"
-        );
+            Sku: "KB-RGB-001");
 
-        _mockValidator.Setup(v => v.Validate(request))
-            .Returns(new ValidationResult());
+        _mockValidator
+            .Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
 
         _mockRepository.Setup(r => r.ExistsAsync(request.Sku))
             .ReturnsAsync(false);
@@ -58,8 +58,9 @@ public class CreateProductUseCaseTests
         Assert.Equal(request.Sku, response.Sku);
 
 
-        _mockValidator.Verify(v => v.Validate(request), Times.Once);
+        _mockValidator.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
         _mockRepository.Verify(r => r.ExistsAsync(request.Sku), Times.Once);
+
         _mockRepository.Verify(r => r.AddAsync(It.Is<Product>(p =>
             p.Name == request.Name &&
             p.Sku == request.Sku &&
@@ -77,7 +78,9 @@ public class CreateProductUseCaseTests
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(ActAsync);
         Assert.Equal("request", exception.ParamName);
 
-        _mockValidator.Verify(v => v.Validate(It.IsAny<CreateProductRequest>()), Times.Never);
+        _mockValidator.Verify(v => v.ValidateAsync(It.IsAny<CreateProductRequest>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
         _mockRepository.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Never);
     }
 
@@ -90,16 +93,15 @@ public class CreateProductUseCaseTests
             Description: "Desc",
             Price: 100m,
             StockQuantity: 10,
-            Sku: "SKU-001"
-        );
+            Sku: "SKU-001");
 
         const string expectedKey = nameof(CreateProductRequest.Name);
         const string expectedMessage = CreateProductValidator.NameRequired;
 
         ValidationFailure failure = new(propertyName: expectedKey, errorMessage: expectedMessage);
 
-        _mockValidator.Setup(v => v.Validate(request))
-            .Returns(new ValidationResult([failure]));
+        _mockValidator.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult([failure]));
 
         // Act
         async Task ActAsync() => await _sut.ExecuteAsync(request);
@@ -110,7 +112,9 @@ public class CreateProductUseCaseTests
         Assert.Contains(expectedKey, exception.Errors.Keys);
         Assert.Contains(exception.Errors[expectedKey], error => error == expectedMessage);
 
-        _mockValidator.Verify(v => v.Validate(request), Times.Once);
+        _mockValidator.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()),
+            Times.Once);
+
         _mockRepository.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Never);
     }
 
@@ -123,11 +127,10 @@ public class CreateProductUseCaseTests
             Description: "Desc",
             Price: 100m,
             StockQuantity: 10,
-            Sku: "EXISTING-SKU"
-        );
+            Sku: "EXISTING-SKU");
 
-        _mockValidator.Setup(v => v.Validate(request))
-            .Returns(new ValidationResult());
+        _mockValidator.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
 
         _mockRepository.Setup(r => r.ExistsAsync(request.Sku))
             .ReturnsAsync(true);
@@ -141,7 +144,9 @@ public class CreateProductUseCaseTests
         var exception = await Assert.ThrowsAsync<ConflictException>(ActAsync);
         Assert.Equal(expectedMessage, exception.Message);
 
-        _mockValidator.Verify(v => v.Validate(request), Times.Once);
+        _mockValidator.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()),
+            Times.Once);
+
         _mockRepository.Verify(r => r.ExistsAsync(request.Sku), Times.Once);
         _mockRepository.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Never);
     }
