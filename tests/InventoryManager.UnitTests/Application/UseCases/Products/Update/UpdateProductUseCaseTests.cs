@@ -41,8 +41,8 @@ public class UpdateProductUseCaseTests
             Sku: "NEW-SKU"
         );
 
-        _mockValidator.Setup(v => v.Validate(request))
-            .Returns(new ValidationResult());
+        _mockValidator.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
 
         _mockRepository.Setup(r => r.GetByIdAsync(productId))
             .ReturnsAsync(existingProduct);
@@ -57,7 +57,7 @@ public class UpdateProductUseCaseTests
         Assert.Equal(request.Name, existingProduct.Name);
         Assert.Equal(request.Sku, existingProduct.Sku);
 
-        _mockValidator.Verify(v => v.Validate(request), Times.Once);
+        _mockValidator.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
         _mockRepository.Verify(r => r.GetByIdAsync(productId), Times.Once);
         _mockRepository.Verify(r => r.IsSkuUniqueAsync(request.Sku, productId), Times.Once);
         _mockRepository.Verify(r => r.UpdateAsync(existingProduct), Times.Once);
@@ -77,7 +77,7 @@ public class UpdateProductUseCaseTests
         Assert.Equal("request", exception.ParamName);
 
         // Garante que nada foi chamado
-        _mockValidator.Verify(v => v.Validate(It.IsAny<UpdateProductRequest>()), Times.Never);
+        _mockValidator.Verify(v => v.ValidateAsync(It.IsAny<UpdateProductRequest>(), It.IsAny<CancellationToken>()), Times.Never);
         _mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
         _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Never);
     }
@@ -94,8 +94,8 @@ public class UpdateProductUseCaseTests
 
         ValidationFailure failure = new(expectedKey, expectedMessage);
 
-        _mockValidator.Setup(v => v.Validate(request))
-            .Returns(new ValidationResult([failure]));
+        _mockValidator.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult([failure]));
 
         // Act
         async Task ActAsync() => await _sut.ExecuteAsync(productId, request);
@@ -106,7 +106,7 @@ public class UpdateProductUseCaseTests
         Assert.Contains(exception.Errors[expectedKey], error => error == expectedMessage);
 
         // Verify
-        _mockValidator.Verify(v => v.Validate(request), Times.Once);
+        _mockValidator.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
         _mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
         _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Never);
     }
@@ -118,8 +118,8 @@ public class UpdateProductUseCaseTests
         Guid productId = Guid.NewGuid();
         UpdateProductRequest request = new(Name: "Name", Description: "Desc", Price: 100m, StockQuantity: 10, Sku: "SKU");
 
-        _mockValidator.Setup(v => v.Validate(request))
-            .Returns(new ValidationResult());
+        _mockValidator.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
 
         _mockRepository.Setup(r => r.GetByIdAsync(productId))
             .ReturnsAsync((Product?)null);
@@ -134,7 +134,7 @@ public class UpdateProductUseCaseTests
         Assert.Equal(expectedMessage, exception.Message);
 
         // Verify
-        _mockValidator.Verify(v => v.Validate(request), Times.Once);
+        _mockValidator.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
         _mockRepository.Verify(r => r.GetByIdAsync(productId), Times.Once);
         _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Never);
     }
@@ -147,8 +147,8 @@ public class UpdateProductUseCaseTests
         Product existingProduct = new(name: "Old Name", description: "Desc", price: 100m, stockQuantity: 5, sku: "OLD-SKU");
         UpdateProductRequest request = new(Name: "Name", Description: "Desc", Price: 100m, StockQuantity: 10, Sku: "DUPLICATE-SKU");
 
-        _mockValidator.Setup(v => v.Validate(request))
-            .Returns(new ValidationResult());
+        _mockValidator.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
 
         _mockRepository.Setup(r => r.GetByIdAsync(productId))
             .ReturnsAsync(existingProduct);
@@ -168,7 +168,7 @@ public class UpdateProductUseCaseTests
         Assert.Equal(expectedMessage, exception.Message);
 
         // Verify
-        _mockValidator.Verify(v => v.Validate(request), Times.Once);
+        _mockValidator.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
         _mockRepository.Verify(r => r.GetByIdAsync(productId), Times.Once);
         _mockRepository.Verify(r => r.IsSkuUniqueAsync(request.Sku, productId), Times.Once);
         _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>()), Times.Never);
