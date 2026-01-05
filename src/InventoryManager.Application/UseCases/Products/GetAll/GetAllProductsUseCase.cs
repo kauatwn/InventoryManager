@@ -30,7 +30,7 @@ public sealed partial class GetAllProductsUseCase(
             throw new ValidationException(errors);
         }
 
-        (IReadOnlyCollection<Product> products, int totalCount) = await repository.GetAllAsync(request.Page, request.PageSize);
+        (IReadOnlyList<Product> products, int totalCount) = await repository.GetAllAsync(request.Page, request.PageSize);
 
         List<ProductResponse> items = [.. products
             .Select(p =>

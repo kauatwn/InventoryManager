@@ -8,7 +8,7 @@ public interface IProductRepository
     Task UpdateAsync(Product product);
     Task DeleteAsync(Product product);
     Task<Product?> GetByIdAsync(Guid id);
-    Task<(IReadOnlyCollection<Product> Items, int TotalCount)> GetAllAsync(int page, int pageSize);
+    Task<(IReadOnlyList<Product> Items, int TotalCount)> GetAllAsync(int page, int pageSize);
     Task<bool> ExistsAsync(string sku);
     Task<bool> IsSkuUniqueAsync(string sku, Guid ignoreProductId);
 }
