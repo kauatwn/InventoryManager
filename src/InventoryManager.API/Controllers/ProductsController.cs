@@ -16,6 +16,8 @@ namespace InventoryManager.API.Controllers;
 public sealed class ProductsController : ControllerBase
 {
     [HttpPost]
+    [EndpointSummary("Create a new product")]
+    [EndpointDescription("Creates a new product with the provided information. SKU must be unique across all products.")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
@@ -27,6 +29,8 @@ public sealed class ProductsController : ControllerBase
     }
 
     [HttpGet]
+    [EndpointSummary("Retrieve all products")]
+    [EndpointDescription("Returns paginated list of products. Pagination metadata is included in X-Pagination response header.")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<ProductResponse>>> GetAll(IGetAllProductsUseCase useCase, [FromQuery] GetAllProductsRequest request)
     {
@@ -37,6 +41,7 @@ public sealed class ProductsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [EndpointSummary("Retrieve product by ID")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProductResponse>> GetById(IGetProductByIdUseCase useCase, Guid id)
@@ -46,6 +51,8 @@ public sealed class ProductsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [EndpointSummary("Update an existing product")]
+    [EndpointDescription("Updates all properties of an existing product. SKU must be unique if changed.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
@@ -58,6 +65,7 @@ public sealed class ProductsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [EndpointSummary("Delete a product")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Delete(IDeleteProductUseCase useCase, Guid id)
