@@ -20,8 +20,8 @@ public sealed class ProductsController : ControllerBase
     [EndpointDescription("Creates a new product with the provided information. SKU must be unique across all products.")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
     public async Task<ActionResult<ProductResponse>> Create(ICreateProductUseCase useCase, CreateProductRequest request)
     {
         ProductResponse response = await useCase.ExecuteAsync(request);
@@ -55,10 +55,10 @@ public sealed class ProductsController : ControllerBase
     [EndpointDescription("Updates all properties of an existing product. SKU must be unique if changed.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult> Update(IUpdateProductUseCase useCase, Guid id, UpdateProductRequest request)
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> Update(IUpdateProductUseCase useCase, Guid id, UpdateProductRequest request)
     {
         await useCase.ExecuteAsync(id, request);
         return NoContent();
@@ -68,7 +68,7 @@ public sealed class ProductsController : ControllerBase
     [EndpointSummary("Delete a product")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> Delete(IDeleteProductUseCase useCase, Guid id)
+    public async Task<IActionResult> Delete(IDeleteProductUseCase useCase, Guid id)
     {
         await useCase.ExecuteAsync(id);
         return NoContent();

@@ -122,7 +122,7 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
         Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
 
         // Act
-        HttpResponseMessage response = await _client.GetAsync("/api/products?page=1&pageSize=10");
+        HttpResponseMessage response = await _client.GetAsync($"{BaseUrl}?page=1&pageSize=10");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -177,7 +177,7 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
         Guid nonExistentId = Guid.NewGuid();
 
         // Act
-        HttpResponseMessage response = await _client.GetAsync($"/api/products/{nonExistentId}");
+        HttpResponseMessage response = await _client.GetAsync($"{BaseUrl}/{nonExistentId}");
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -213,12 +213,12 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
             Sku: createdProduct.Sku);
 
         // Act
-        HttpResponseMessage response = await _client.PutAsJsonAsync($"/api/products/{createdProduct.Id}", updateRequest);
+        HttpResponseMessage response = await _client.PutAsJsonAsync($"{BaseUrl}/{createdProduct.Id}", updateRequest);
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
-        ProductResponse? getResponse = await _client.GetFromJsonAsync<ProductResponse>($"/api/products/{createdProduct.Id}");
+        ProductResponse? getResponse = await _client.GetFromJsonAsync<ProductResponse>($"{BaseUrl}/{createdProduct.Id}");
         Assert.Equal("Updated Name", getResponse?.Name);
     }
 
@@ -234,7 +234,7 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
             Sku: "SKU-TEST");
 
         // Act
-        HttpResponseMessage response = await _client.PutAsJsonAsync($"/api/products/{Guid.NewGuid()}", updateRequest);
+        HttpResponseMessage response = await _client.PutAsJsonAsync($"{BaseUrl}/{Guid.NewGuid()}", updateRequest);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -258,12 +258,12 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
         Assert.NotNull(createdProduct);
 
         // Act
-        HttpResponseMessage response = await _client.DeleteAsync($"/api/products/{createdProduct.Id}");
+        HttpResponseMessage response = await _client.DeleteAsync($"{BaseUrl}/{createdProduct.Id}");
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
-        HttpResponseMessage getResponse = await _client.GetAsync($"/api/products/{createdProduct.Id}");
+        HttpResponseMessage getResponse = await _client.GetAsync($"{BaseUrl}/{createdProduct.Id}");
         Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
     }
 
@@ -271,7 +271,7 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
     public async Task Delete_ShouldReturnNotFound_WhenIdDoesNotExist()
     {
         // Act
-        HttpResponseMessage response = await _client.DeleteAsync($"/api/products/{Guid.NewGuid()}");
+        HttpResponseMessage response = await _client.DeleteAsync($"{BaseUrl}/{Guid.NewGuid()}");
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
