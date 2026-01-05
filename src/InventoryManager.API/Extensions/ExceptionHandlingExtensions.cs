@@ -1,4 +1,4 @@
-﻿using InventoryManager.API.Infrastructure.Errors;
+﻿using InventoryManager.API.ExceptionHandlers;
 using System.Diagnostics.CodeAnalysis;
 
 namespace InventoryManager.API.Extensions;

@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
-namespace InventoryManager.API.Infrastructure.Errors;
+namespace InventoryManager.API.ExceptionHandlers;
 
 public sealed partial class ConflictExceptionHandler(ILogger<ConflictExceptionHandler> logger) : IExceptionHandler
 {
