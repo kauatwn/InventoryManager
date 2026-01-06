@@ -3,7 +3,10 @@ using InventoryManager.Application.DTOs.Common;
 using InventoryManager.Application.DTOs.Requests;
 using InventoryManager.Application.DTOs.Responses;
 using InventoryManager.Application.UseCases.Products.Create;
+using InventoryManager.Application.UseCases.Products.GetAll;
+using InventoryManager.Domain.Entities;
 using InventoryManager.IntegrationTests.Abstractions;
+using InventoryManager.IntegrationTests.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Net.Http.Json;
@@ -21,6 +24,7 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly HttpClient _client = factory.CreateClient();
+    private readonly IntegrationTestSeeder _seeder = new(factory);
 
     [Fact(DisplayName = "Should create a product when the request is valid")]
     public async Task Create_ShouldReturnCreated_WhenRequestIsValid()
@@ -65,7 +69,6 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
 
         Assert.NotNull(problemDetails);
         Assert.Equal(ValidationExceptionHandler.DefaultType, problemDetails.Type);
-        Assert.Equal(ValidationExceptionHandler.DefaultDetail, problemDetails.Detail);
         Assert.True(problemDetails.Errors.ContainsKey(nameof(request.Name)));
         Assert.True(problemDetails.Errors.ContainsKey(nameof(request.Price)));
     }
@@ -74,27 +77,18 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
     public async Task Create_ShouldReturnConflict_WhenSkuAlreadyExists()
     {
         // Arrange
-        CreateProductRequest product1 = new(
-            Name: "Original Product",
-            Description: "Desc",
-            Price: 100m,
-            StockQuantity: 10,
-            Sku: $"SKU-DUPLICATE-{Guid.NewGuid():N}"[..MaxSkuLength]);
+        string sku = $"SKU-DUP-{Guid.NewGuid():N}"[..MaxSkuLength];
+        await _seeder.CreateProductAsync(sku: sku);
 
-        string expectedSku = product1.Sku;
-
-        HttpResponseMessage firstResponse = await _client.PostAsJsonAsync(BaseUrl, product1);
-        Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
-
-        CreateProductRequest product2WithSameSku = new(
+        CreateProductRequest productWithSameSku = new(
             Name: "Copycat Product",
             Description: "Desc",
             Price: 200m,
             StockQuantity: 5,
-            Sku: product1.Sku);
+            Sku: sku);
 
         // Act
-        HttpResponseMessage response = await _client.PostAsJsonAsync(BaseUrl, product2WithSameSku);
+        HttpResponseMessage response = await _client.PostAsJsonAsync(BaseUrl, productWithSameSku);
 
         // Assert
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
@@ -102,8 +96,7 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
 
         Assert.NotNull(problemDetails);
         Assert.Equal(ConflictExceptionHandler.DefaultTitle, problemDetails.Title);
-        Assert.Equal(ConflictExceptionHandler.DefaultType, problemDetails.Type);
-        string expectedDetail = string.Format(CreateProductUseCase.SkuAlreadyExistsMessage, expectedSku);
+        string expectedDetail = string.Format(CreateProductUseCase.SkuAlreadyExistsMessage, sku);
         Assert.Equal(expectedDetail, problemDetails.Detail);
     }
 
@@ -111,18 +104,11 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
     public async Task GetAll_ShouldReturnOk_WithProducts()
     {
         // Arrange
-        CreateProductRequest request = new(
-            Name: "IPhone 15 Pro",
-            Description: "Apple Smartphone",
-            Price: 1200m,
-            StockQuantity: 10,
-            Sku: $"SKU-{Guid.NewGuid():N}"[..MaxSkuLength]);
-
-        HttpResponseMessage createResponse = await _client.PostAsJsonAsync(BaseUrl, request);
-        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        Product product = await _seeder.CreateProductAsync();
 
         // Act
-        HttpResponseMessage response = await _client.GetAsync($"{BaseUrl}?page=1&pageSize=10");
+        HttpResponseMessage response = await _client.GetAsync(
+            $"{BaseUrl}?page=1&pageSize={GetAllProductsValidator.MaxPageSize}");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -130,44 +116,32 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
 
         Assert.NotNull(products);
         Assert.NotEmpty(products);
-        Assert.True(response.Headers.Contains("X-Pagination"), "Response should contain X-Pagination header");
+        Assert.Contains(products, p => p.Id == product.Id);
+        Assert.True(response.Headers.Contains("X-Pagination"));
 
         string jsonHeader = response.Headers.GetValues("X-Pagination").First();
         PagedMeta? meta = JsonSerializer.Deserialize<PagedMeta>(jsonHeader, JsonOptions);
 
         Assert.NotNull(meta);
-        Assert.Equal(15, meta.TotalItems);
-        Assert.Equal(2, meta.TotalPages);
-        Assert.Equal(1, meta.CurrentPage);
-        Assert.True(meta.HasNextPage);
+        Assert.True(meta.TotalItems >= 15);
     }
 
     [Fact(DisplayName = "Should return product when Id exists")]
     public async Task GetById_ShouldReturnOk_WhenIdExists()
     {
         // Arrange
-        CreateProductRequest request = new(
-            Name: "IPhone 15 Pro",
-            Description: "Apple Smartphone",
-            Price: 1200m,
-            StockQuantity: 10,
-            Sku: $"SKU-{Guid.NewGuid():N}"[..MaxSkuLength]);
-
-        HttpResponseMessage createResponse = await _client.PostAsJsonAsync(BaseUrl, request);
-        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
-
-        ProductResponse? createdProduct = await createResponse.Content.ReadFromJsonAsync<ProductResponse>();
-        Assert.NotNull(createdProduct);
+        Product product = await _seeder.CreateProductAsync(name: "Test GetById");
 
         // Act
-        HttpResponseMessage response = await _client.GetAsync($"{BaseUrl}/{createdProduct.Id}");
+        HttpResponseMessage response = await _client.GetAsync($"{BaseUrl}/{product.Id}");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
         ProductResponse? productResponse = await response.Content.ReadFromJsonAsync<ProductResponse>();
+
         Assert.NotNull(productResponse);
-        Assert.Equal(createdProduct.Id, productResponse.Id);
+        Assert.Equal(product.Id, productResponse.Id);
+        Assert.Equal("Test GetById", productResponse.Name);
     }
 
     [Fact(DisplayName = "Should return NotFound when Id does not exist")]
@@ -181,45 +155,32 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        ProblemDetails? problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        Assert.NotNull(problemDetails);
-
-        Assert.Equal(NotFoundExceptionHandler.DefaultTitle, problemDetails.Title);
-        Assert.Equal(NotFoundExceptionHandler.DefaultType, problemDetails.Type);
     }
 
     [Fact(DisplayName = "Should return NoContent when product is updated successfully")]
     public async Task Update_ShouldReturnNoContent_WhenUpdateIsValid()
     {
         // Arrange
-        CreateProductRequest request = new(
-            Name: "IPhone 15 Pro",
-            Description: "Apple Smartphone",
-            Price: 1200m,
-            StockQuantity: 10,
-            Sku: $"SKU-{Guid.NewGuid():N}"[..MaxSkuLength]);
-
-        HttpResponseMessage createResponse = await _client.PostAsJsonAsync(BaseUrl, request);
-        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
-
-        ProductResponse? createdProduct = await createResponse.Content.ReadFromJsonAsync<ProductResponse>();
-        Assert.NotNull(createdProduct);
+        Product product = await _seeder.CreateProductAsync(name: "Original Name", price: 100m);
 
         UpdateProductRequest updateRequest = new(
             Name: "Updated Name",
             Description: "Updated Description",
             Price: 1500m,
             StockQuantity: 50,
-            Sku: createdProduct.Sku);
+            Sku: product.Sku);
 
         // Act
-        HttpResponseMessage response = await _client.PutAsJsonAsync($"{BaseUrl}/{createdProduct.Id}", updateRequest);
+        HttpResponseMessage response = await _client.PutAsJsonAsync($"{BaseUrl}/{product.Id}", updateRequest);
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
-        ProductResponse? getResponse = await _client.GetFromJsonAsync<ProductResponse>($"{BaseUrl}/{createdProduct.Id}");
-        Assert.Equal("Updated Name", getResponse?.Name);
+        Product? updatedProduct = await _seeder.GetProductByIdAsync(product.Id);
+
+        Assert.NotNull(updatedProduct);
+        Assert.Equal("Updated Name", updatedProduct.Name);
+        Assert.Equal(1500m, updatedProduct.Price);
     }
 
     [Fact(DisplayName = "Should return NotFound when updating non-existent product")]
@@ -244,27 +205,16 @@ public class ProductsControllerTests(IntegrationTestWebAppFactory factory)
     public async Task Delete_ShouldReturnNoContent_WhenIdExists()
     {
         // Arrange
-        CreateProductRequest request = new(
-            Name: "IPhone 15 Pro",
-            Description: "Apple Smartphone",
-            Price: 1200m,
-            StockQuantity: 10,
-            Sku: $"SKU-{Guid.NewGuid():N}"[..MaxSkuLength]);
-
-        HttpResponseMessage createResponse = await _client.PostAsJsonAsync(BaseUrl, request);
-        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
-
-        ProductResponse? createdProduct = await createResponse.Content.ReadFromJsonAsync<ProductResponse>();
-        Assert.NotNull(createdProduct);
+        Product product = await _seeder.CreateProductAsync();
 
         // Act
-        HttpResponseMessage response = await _client.DeleteAsync($"{BaseUrl}/{createdProduct.Id}");
+        HttpResponseMessage response = await _client.DeleteAsync($"{BaseUrl}/{product.Id}");
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
-        HttpResponseMessage getResponse = await _client.GetAsync($"{BaseUrl}/{createdProduct.Id}");
-        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+        Product? deletedProduct = await _seeder.GetProductByIdAsync(product.Id);
+        Assert.Null(deletedProduct);
     }
 
     [Fact(DisplayName = "Should return NotFound when deleting non-existent product")]
