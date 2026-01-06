@@ -1,4 +1,4 @@
-﻿using InventoryManager.API.Infrastructure.Errors;
+﻿using InventoryManager.API.ExceptionHandlers;
 using InventoryManager.Application.DTOs.Common;
 using InventoryManager.Application.DTOs.Requests;
 using InventoryManager.Application.DTOs.Responses;
@@ -9,7 +9,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-namespace InventoryManager.IntegrationTests.Controllers;
+namespace InventoryManager.IntegrationTests.Http.Controllers;
 
 [Collection("IntegrationTests")]
 [Trait("Category", "Integration")]

@@ -1,7 +1,7 @@
 ﻿using InventoryManager.IntegrationTests.Abstractions;
 using System.Net;
 
-namespace InventoryManager.IntegrationTests.Docs;
+namespace InventoryManager.IntegrationTests.Http.Specs;
 
 [Collection("IntegrationTests")]
 [Trait("Category", "Integration")]
