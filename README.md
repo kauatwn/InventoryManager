@@ -22,13 +22,13 @@ Ensure you have the following installed to run this project efficiently:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/kauatwn/InventoryManager.git
+git clone https://github.com/kauatwn/dotnet-clean-architecture-rest-api.git
 ```
 
 ### 2. Enter the Directory
 
 ```bash
-cd InventoryManager
+cd dotnet-clean-architecture-rest-api
 ```
 
 ### 3. Choose Execution Method
@@ -80,7 +80,7 @@ dotnet test
 The solution follows the **Clean Architecture** principles to ensure separation of concerns and testability, with a dedicated split between Unit and Integration testing.
 
 ```plaintext
-InventoryManager/
+dotnet-clean-architecture-rest-api/
 ├── src/
 │   ├── InventoryManager.API/              # Entry point, Controllers, Swagger
 │   ├── InventoryManager.Application/      # Use Cases, DTOs, Mappers
